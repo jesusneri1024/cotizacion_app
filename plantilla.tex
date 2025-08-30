@@ -10,6 +10,26 @@
 \usepackage{helvet}
 \renewcommand{\familydefault}{\sfdefault}
 
+\usepackage{fancyhdr} % <--- paquete para encabezado y pie
+
+\setlength{\parindent}{0pt}
+
+% --- Configurar fancyhdr ---
+\pagestyle{fancy}
+\fancyhf{} % limpiar cabecera y pie
+\fancyfoot[C]{%
+    \parbox{\textwidth}{\centering\small
+        Gracias por su preferencia. \\
+        \textbf{El Ángel En Sus Fiestas} \quad|\quad
+        \textbf{Domicilio:} Blvd. La Luz 3113 \quad|\quad
+        \textbf{Teléfono:} (477) 269-43-10 \quad\quad
+        María Gabriela Hernández Castro
+    }
+}
+
+\renewcommand{\headrulewidth}{0pt} % sin línea arriba
+\renewcommand{\footrulewidth}{0.4pt} % línea arriba del footer (opcional)
+
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 \newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
 
@@ -20,6 +40,7 @@
     {\Huge \textbf{Cotización}} \\[0.2cm]
     \textbf{Folio: (( folio ))} \\
     Fecha: (( fecha ))
+    
 \end{minipage}
 \begin{minipage}{0.3\linewidth}
     \raggedleft
@@ -33,6 +54,7 @@
 \textbf{Dirección:} (( direccion )) \\
 % \textbf{Dirección de entrega:} (( direccion_entrega )) \\
 \textbf{Fecha del evento:} (( fecha_evento )) \\
+\textbf{Id pedido:} (( id_pedido )) \\
 
 
 \vspace{0.8cm}
@@ -63,8 +85,15 @@
 \textbf{Condiciones:} \\[0.3cm]
 (( condiciones ))
 
-\vfill
-Atentamente, \\
-\textbf{El Ángel En Sus Fiestas} \\
+
+
+\vspace{1cm}
+
+\textbf{Datos de pago:} \\[0.3cm]
+Transferencia bancaria: \textbf{BBVA} \\
+Cuenta: \textbf{1234567890} \\
+CLABE: \textbf{012345678901234567} \\
+A nombre de: \textbf{María Gabriela Hernández Castro} \\
+
 
 \end{document}

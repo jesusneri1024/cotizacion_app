@@ -1,0 +1,16 @@
+{
+ "latex-workshop.latex.recipes": [
+  {
+    "name": "tectonic",
+    "tools": ["tectonic"]
+  }
+],
+"latex-workshop.latex.tools": [
+  {
+    "name": "tectonic",
+    "command": "tectonic",
+    "args": ["-X", "compile", "%DOCFILE%"]
+  }
+]
+   
+}

@@ -3,6 +3,8 @@ import csv
 import subprocess
 import os
 import datetime
+import uuid
+import historial 
 
 
 ITEMS_FILE = "items.csv"
@@ -39,27 +41,67 @@ st.title("🧾 Editor de Cotizaciones")
 # Sección Cliente
 # =======================
 st.header("📌 Datos del Cliente")
-cliente_data = leer_csv(CLIENTE_FILE, fieldnames=["cliente", "direccion", "direccion_entrega", "fecha_evento", "telefono_cliente"])
 
-if cliente_data:
-    cliente = cliente_data[0]
-else:
-    cliente = {
-        "cliente": "",
-        "direccion": "",
-        "direccion_entrega": "",
-        "fecha_evento": "",
-        "telefono_cliente": ""
-    }
+# Cargar clientes (con ID incluido)
+clientes = leer_csv(
+    CLIENTE_FILE,
+    fieldnames=["id", "cliente", "direccion", "direccion_entrega", "fecha_evento", "telefono_cliente"]
+)
 
+# 🔧 Normalizar: asegurar que todos los clientes tengan un ID
+for c in clientes:
+    if not c.get("id"):  
+        c["id"] = str(uuid.uuid4())
+
+# Reescribir archivo para que quede limpio y consistente
+if clientes:
+    escribir_csv(CLIENTE_FILE, clientes, fieldnames=["id", "cliente", "direccion", "direccion_entrega", "fecha_evento", "telefono_cliente"])
+
+nombres_clientes = [c["cliente"] for c in clientes] if clientes else []
+
+# Cliente vacío por defecto
+cliente = {
+    "id": "",
+    "cliente": "",
+    "direccion": "",
+    "direccion_entrega": "",
+    "fecha_evento": "",
+    "telefono_cliente": ""
+}
+
+# Selección de modo
+modo = st.radio("¿Qué quieres hacer?", ["➕ Nuevo cliente", "✏️ Editar cliente existente"])
+
+if modo == "✏️ Editar cliente existente" and nombres_clientes:
+    # Campo de búsqueda
+    busqueda = st.text_input("🔍 Buscar cliente (nombre, teléfono o dirección)")
+
+    if busqueda:
+        resultados = [
+            c for c in clientes
+            if busqueda.lower() in c["cliente"].lower()
+            or busqueda.lower() in c["telefono_cliente"].lower()
+            or busqueda.lower() in c["direccion"].lower()
+        ]
+    else:
+        resultados = clientes
+
+    if resultados:
+        # Crear etiquetas descriptivas seguras con .get()
+        opciones = {
+            f'{c.get("cliente","")} - {c.get("telefono_cliente","")} - {c.get("direccion","")} (ID: {c.get("id","N/A")})': c
+            for c in resultados
+        }
+        seleccionado = st.selectbox("Selecciona cliente", list(opciones.keys()))
+        cliente = opciones[seleccionado]
+    else:
+        st.warning("⚠️ No se encontraron clientes con ese criterio")
+
+# Campos de entrada
 cliente["cliente"] = st.text_input("Nombre del cliente", cliente.get("cliente", ""))
 cliente["direccion"] = st.text_input("Dirección", cliente.get("direccion", ""))
-# cliente["direccion_entrega"] = st.text_input("Dirección de entrega", cliente.get("direccion_entrega", ""))
 
-
-#cliente["fecha_evento"] = st.text_input("Fecha del evento", cliente.get("fecha_evento", ""))
-
-# Fecha por defecto: si ya existe en el CSV, la usamos; si no, hoy
+# Fecha del evento
 if cliente.get("fecha_evento"):
     try:
         fecha_guardada = datetime.datetime.strptime(cliente["fecha_evento"], "%d-%m-%Y").date()
@@ -68,20 +110,48 @@ if cliente.get("fecha_evento"):
 else:
     fecha_guardada = datetime.date.today()
 
-# Calendario interactivo
 fecha_evento = st.date_input("📅 Fecha del evento", value=fecha_guardada)
-
-# Guardamos en texto en formato dd-mm-aaaa
 cliente["fecha_evento"] = fecha_evento.strftime("%d-%m-%Y")
 
-
-
+# Mostrar también en formato largo (ejemplo: viernes 29 agosto 2025)
+fecha_larga = fecha_evento.strftime("%A %d %B %Y").capitalize()
+st.caption(f"📌 Fecha seleccionada: {fecha_larga}")
 
 cliente["telefono_cliente"] = st.text_input("Teléfono", cliente.get("telefono_cliente", ""))
 
+# Guardar cliente
 if st.button("💾 Guardar cliente"):
-    escribir_csv(CLIENTE_FILE, [cliente], fieldnames=cliente.keys())
-    st.success("✅ Cliente actualizado")
+    # Validar duplicados (nombre + teléfono)
+    duplicado = next(
+        (c for c in clientes if c["cliente"].strip().lower() == cliente["cliente"].strip().lower()
+         and c["telefono_cliente"].strip() == cliente["telefono_cliente"].strip()
+         and c["id"] != cliente.get("id", "")),  # Ignora si es el mismo cliente que estamos editando
+        None
+    )
+
+    if duplicado:
+        st.error("⚠️ Ya existe un cliente con el mismo nombre y teléfono. No se puede duplicar.")
+    else:
+        if not cliente.get("id"):  
+            # Asignar UUID en lugar de secuencial (más robusto)
+            import uuid
+            cliente["id"] = str(uuid.uuid4())
+
+        existe = False
+        for i, c in enumerate(clientes):
+            if c["id"] == cliente["id"]:
+                clientes[i] = cliente
+                existe = True
+                break
+        if not existe:
+            clientes.append(cliente)
+
+        escribir_csv(
+            CLIENTE_FILE,
+            clientes,
+            fieldnames=["id", "cliente", "direccion", "direccion_entrega", "fecha_evento", "telefono_cliente"]
+        )
+        st.success("✅ Cliente guardado/actualizado")
 
 
 # =======================
@@ -136,8 +206,18 @@ if st.button("💾 Guardar ítems"):
 # =======================
 st.header("⚙️ Exportar")
 if st.button("📄 Generar PDF"):
-    result = subprocess.run(["python", "cotizacion.py"], capture_output=True, text=True)
+    # 1. Guardar pedido y obtener el ID
+    pedido = historial.guardar_pedido(cliente, new_items)
+
+    # 2. Llamar al script de generación de PDF pasando cliente + id_pedido
+    result = subprocess.run(
+        ["python", "cotizacion.py", cliente["cliente"], pedido["id_pedido"]],
+        capture_output=True, text=True
+    )
+    
+    # 3. Validar resultado
     if result.returncode == 0:
         st.success("✅ Cotización generada")
+        st.success(f"📌 Pedido guardado (ID: {pedido['id_pedido']})")
     else:
         st.error(f"❌ Error: {result.stderr}")

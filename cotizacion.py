@@ -2,7 +2,9 @@ from jinja2 import Environment, FileSystemLoader
 import subprocess
 import csv
 import os
+import sys
 from datetime import datetime
+
 
 # ---------------------------
 # Configurar Jinja2
@@ -65,13 +67,27 @@ with open(folio_file, "w") as f:
 
 folio_str = f"COT-{new_folio:03d}"  # -> COT-001, COT-002, etc.
 
+
 # ---------------------------
 # Leer datos del cliente desde cliente.csv
 # ---------------------------
-cliente_data = {}
+#cliente_nombre = sys.argv[1] if len(sys.argv) > 1 else None
+#cliente_data = None
+
+cliente_nombre = sys.argv[1] if len(sys.argv) > 1 else None
+cliente_data = None
+id_pedido = sys.argv[2] if len(sys.argv) > 2 else None
+
 with open("cliente.csv", newline="", encoding="utf-8") as csvfile:
     reader = csv.DictReader(csvfile)
-    cliente_data = next(reader)  # Tomamos la primera fila del archivo
+    for row in reader:
+        if cliente_nombre and row["cliente"] == cliente_nombre:
+            cliente_data = row
+            break
+
+if not cliente_data:
+    print("❌ Cliente no encontrado en cliente.csv")
+    sys.exit(1)
 
 # ---------------------------
 # Datos de la cotización
@@ -88,7 +104,8 @@ datos = {
     "iva": iva,
     "total": total,
     "condiciones": "Cotización válida por 15 días. Se requiere anticipo del 50%.",
-    "telefono_cliente": cliente_data.get("telefono_cliente", "")
+    "telefono_cliente": cliente_data.get("telefono_cliente", ""),
+    "id_pedido": id_pedido
 }
 
 # ---------------------------
@@ -104,9 +121,15 @@ with open(tex_file, "w") as f:
 # Compilar con tectonic
 # ---------------------------
 try:
-    subprocess.run(["tectonic", tex_file], check=True)
+    result = subprocess.run(
+        ["tectonic", tex_file],
+        check=True,
+        capture_output=True,
+        text=True
+    )
+    print("📄 STDOUT:\n", result.stdout)
+    print("⚠️ STDERR:\n", result.stderr)
 
-    # Renombrar el PDF final con el folio
     if os.path.exists("cotizacion.pdf"):
         pdf_name = f"{folio_str}.pdf"
         os.rename("cotizacion.pdf", pdf_name)
@@ -115,4 +138,6 @@ try:
         print("❌ No se generó el PDF esperado")
 
 except subprocess.CalledProcessError as e:
-    print("❌ Error al compilar LaTeX:", e)
+    print("❌ Error al compilar LaTeX")
+    print("STDOUT:\n", e.stdout)
+    print("STDERR:\n", e.stderr)
