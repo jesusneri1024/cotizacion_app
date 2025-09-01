@@ -127,3 +127,29 @@ if nombre_busqueda:
                     st.text(p["items"])
     else:
         st.warning(f"⚠️ No se encontraron pedidos para '{nombre_busqueda}'")
+
+
+# =======================
+# Sección 5: Buscar por ID de pedido
+# =======================
+st.header("🔎 Buscar por ID de pedido")
+
+id_busqueda = st.text_input("Escribe el ID del pedido:")
+
+if id_busqueda:
+    resultados_id = [p for p in pedidos if p["id_pedido"] == id_busqueda]
+
+    if resultados_id:
+        st.success(f"✅ Se encontró el pedido con ID '{id_busqueda}'")
+
+        for p in resultados_id:
+            tipo = "📅 Futuro" if p["fecha_evento_dt"] and p["fecha_evento_dt"].date() >= hoy else "⏳ Pasado"
+            with st.expander(f"{tipo} - {p['nombre_cliente']} - {p['fecha_evento']} (Pedido {p['id_pedido']})"):
+                st.write(f"📅 Creado: {p['fecha_creacion']}")
+                st.write(f"💰 Total: **${p['total']}**")
+                try:
+                    st.table(json.loads(p["items"]))
+                except:
+                    st.text(p["items"])
+    else:
+        st.warning(f"⚠️ No se encontró ningún pedido con el ID '{id_busqueda}'")
