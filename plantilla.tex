@@ -1,0 +1,99 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\geometry{a4paper, margin=2cm}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[table]{xcolor}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+\usepackage{fancyhdr} % <--- paquete para encabezado y pie
+
+\setlength{\parindent}{0pt}
+
+% --- Configurar fancyhdr ---
+\pagestyle{fancy}
+\fancyhf{} % limpiar cabecera y pie
+\fancyfoot[C]{%
+    \parbox{\textwidth}{\centering\small
+        Gracias por su preferencia. \\
+        \textbf{El Ángel En Sus Fiestas} \quad|\quad
+        \textbf{Domicilio:} Blvd. La Luz 3113 \quad|\quad
+        \textbf{Teléfono:} (477) 269-43-10 \quad\quad
+        María Gabriela Hernández Castro
+    }
+}
+
+\renewcommand{\headrulewidth}{0pt} % sin línea arriba
+\renewcommand{\footrulewidth}{0.4pt} % línea arriba del footer (opcional)
+
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+\begin{document}
+
+% --- Encabezado ---
+\begin{minipage}{0.7\linewidth}
+    {\Huge \textbf{Cotización}} \\[0.2cm]
+    \textbf{Folio: (( folio ))} \\
+    Fecha: (( fecha ))
+    
+\end{minipage}
+\begin{minipage}{0.3\linewidth}
+    \raggedleft
+    \includegraphics[width=3cm]{logo.png} % tu logo aquí
+\end{minipage}
+
+\vspace{0.5cm}
+
+\textbf{Cliente:} (( cliente )) \\
+\textbf{Teléfono cliente:} (( telefono_cliente )) \\
+\textbf{Dirección:} (( direccion )) \\
+% \textbf{Dirección de entrega:} (( direccion_entrega )) \\
+\textbf{Fecha del evento:} (( fecha_evento )) \\
+\textbf{Id pedido:} (( id_pedido )) \\
+
+
+\vspace{0.8cm}
+
+% --- Tabla de conceptos ---
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|P{7cm}|C{2cm}|C{3cm}|C{3cm}|}
+\hline
+\rowcolor[gray]{0.9}
+\textbf{Descripción} & \textbf{Cant.} & \textbf{P.Unitario} & \textbf{Importe} \\
+\hline
+(% for item in items %)
+(( item.descripcion )) & (( item.cantidad )) & \$ (( "%.2f"|format(item.precio_unitario) )) & \$ (( "%.2f"|format(item.cantidad * item.precio_unitario) )) \\
+\hline
+(% endfor %)
+\rowcolor[gray]{0.95}
+\multicolumn{3}{|r|}{\textbf{Subtotal}} & \$ (( "%.2f"|format(subtotal) )) \\
+\hline
+\multicolumn{3}{|r|}{IVA (16\%)} & \$ (( "%.2f"|format(iva) )) \\
+\hline
+\rowcolor[gray]{0.85}
+\multicolumn{3}{|r|}{\textbf{Total}} & \textbf{\$ (( "%.2f"|format(total) ))} \\
+\hline
+\end{longtable}
+
+\vspace{1cm}
+
+\textbf{Condiciones:} \\[0.3cm]
+(( condiciones ))
+
+
+
+\vspace{1cm}
+
+\textbf{Datos de pago:} \\[0.3cm]
+Transferencia bancaria: \textbf{BBVA} \\
+Cuenta: \textbf{1234567890} \\
+CLABE: \textbf{012345678901234567} \\
+A nombre de: \textbf{María Gabriela Hernández Castro} \\
+
+
+\end{document}

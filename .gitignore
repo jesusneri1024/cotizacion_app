@@ -1,0 +1,8 @@
+# Ignorar todos los PDFs que empiecen con COT-
+COT-*.pdf
+
+cotizacion.tex
+
+folio.txt
+
+logo.png
