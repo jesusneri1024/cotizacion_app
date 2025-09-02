@@ -129,9 +129,11 @@ try:
     print("[INFO] STDERR:\n", result.stderr)
 
     if os.path.exists("cotizacion.pdf"):
-        pdf_name = f"{folio_str}.pdf"
-        os.rename("cotizacion.pdf", pdf_name)
-        print(f"[OK] PDF generado: {pdf_name}")
+        os.makedirs("pdfs", exist_ok=True)  # 📂 Asegurar carpeta pdfs
+        pdf_name = f"COT-{new_folio:03d}.pdf"
+        pdf_path = os.path.join("pdfs", pdf_name)
+        os.rename("cotizacion.pdf", pdf_path)
+        print(f"[OK] PDF generado: {pdf_path}")
     else:
         print("[ERROR] No se generó el PDF esperado")
 

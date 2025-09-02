@@ -34,7 +34,7 @@ def escribir_csv(file, data, fieldnames):
 # -------------------------
 # UI Streamlit
 # -------------------------
-st.title("🧾 Editor de Cotizaciones")
+st.title("Cotizaciones")
 
 
 # =======================
@@ -248,23 +248,85 @@ if st.button("💾 Guardar ítems"):
     st.success("✅ Ítems actualizados")
 
 
+import re, base64, glob
+import streamlit.components.v1 as components
+
 # =======================
 # Generar PDF
 # =======================
 st.header("⚙️ Exportar")
 if st.button("📄 Generar PDF"):
-    # 1. Guardar pedido y obtener el ID
     pedido = historial.guardar_pedido(cliente, new_items)
 
-    # 2. Llamar al script de generación de PDF pasando cliente + id_pedido
     result = subprocess.run(
         ["python", "cotizacion.py", cliente["cliente"], pedido["id_pedido"]],
         capture_output=True, text=True
     )
     
-    # 3. Validar resultado
     if result.returncode == 0:
         st.success("✅ Cotización generada")
         st.success(f"📌 Pedido guardado (ID: {pedido['id_pedido']})")
+
+        # Buscar en stdout el PDF generado (dentro de pdfs/)
+        match = re.search(r"PDF generado:\s+(.*COT-\d+\.pdf)", result.stdout)
+
+        if match:
+            pdf_path = match.group(1)
+
+            if os.path.exists(pdf_path):
+                with open(pdf_path, "rb") as f:
+                    pdf_bytes = f.read()
+
+                st.subheader("📄 Último PDF generado")
+
+                # Botón de descarga
+                st.download_button(
+                    label="⬇️ Descargar PDF",
+                    data=pdf_bytes,
+                    file_name=os.path.basename(pdf_path),
+                    mime="application/pdf"
+                )
+
+                # Visor embebido
+                base64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+                pdf_display = f"""
+                    <iframe src="data:application/pdf;base64,{base64_pdf}" 
+                            width="100%" height="600" type="application/pdf"></iframe>
+                """
+                components.html(pdf_display, height=600)
+            else:
+                st.error(f"❌ No se encontró el PDF generado: {pdf_path}")
+        else:
+            st.error("⚠️ No se pudo detectar el nombre del PDF generado.")
     else:
         st.error(f"❌ Error: {result.stderr}")
+
+
+# =======================
+# Historial de PDFs
+# =======================
+st.header("🗂️ Historial de Cotizaciones")
+
+pdf_files = sorted(glob.glob("pdfs/COT-*.pdf"))
+
+if pdf_files:
+    seleccionado = st.selectbox("Selecciona un PDF para ver:", pdf_files[::-1])  # mostrar últimos primero
+    if seleccionado:
+        with open(seleccionado, "rb") as f:
+            pdf_bytes = f.read()
+
+        st.download_button(
+            label="⬇️ Descargar este PDF",
+            data=pdf_bytes,
+            file_name=os.path.basename(seleccionado),
+            mime="application/pdf"
+        )
+
+        base64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+        pdf_display = f"""
+            <iframe src="data:application/pdf;base64,{base64_pdf}" 
+                    width="100%" height="600" type="application/pdf"></iframe>
+        """
+        components.html(pdf_display, height=600)
+else:
+    st.info("No hay cotizaciones guardadas todavía.")
