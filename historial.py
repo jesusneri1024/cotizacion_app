@@ -30,7 +30,7 @@ def guardar_pedido(cliente, items):
     """
 
     pedidos = leer_csv(PEDIDOS_FILE, fieldnames=[
-        "id_pedido","fecha_creacion","id_cliente","nombre_cliente","fecha_evento","items","total"
+        "id_pedido","fecha_creacion","id_cliente","nombre_cliente","fecha_evento","items","total","estado"
     ])
 
     total = sum(float(it["precio_unitario"]) * int(it["cantidad"]) for it in items)
@@ -42,12 +42,13 @@ def guardar_pedido(cliente, items):
         "nombre_cliente": cliente.get("cliente",""),
         "fecha_evento": cliente.get("fecha_evento",""),
         "items": json.dumps(items, ensure_ascii=False),
-        "total": f"{total:.2f}"
+        "total": f"{total:.2f}",
+        "estado": "cotizacion"   # 👈 Siempre arranca como cotización
     }
 
     pedidos.append(pedido)
     escribir_csv(PEDIDOS_FILE, pedidos, fieldnames=[
-        "id_pedido","fecha_creacion","id_cliente","nombre_cliente","fecha_evento","items","total"
+        "id_pedido","fecha_creacion","id_cliente","nombre_cliente","fecha_evento","items","total","estado"
     ])
 
     return pedido
