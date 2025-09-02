@@ -154,6 +154,53 @@ if st.button("💾 Guardar cliente"):
         st.success("✅ Cliente guardado/actualizado")
 
 
+
+# Botón para borrar cliente con confirmación
+# Estado para manejar confirmación
+if "confirmar_borrado" not in st.session_state:
+    st.session_state.confirmar_borrado = False
+if "cliente_borrado" not in st.session_state:
+    st.session_state.cliente_borrado = None
+
+# Botón inicial para borrar cliente
+if modo == "✏️ Editar cliente existente" and cliente.get("id"):
+    st.subheader("⚠️ Eliminar cliente")
+
+    if not st.session_state.confirmar_borrado:
+        if st.button("🗑️ Borrar cliente"):
+            st.session_state.confirmar_borrado = True
+            st.rerun()
+    else:
+        st.error(f"¿Seguro que quieres borrar el cliente '{cliente['cliente']}'?")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("✅ Sí, borrar"):
+                clientes = [c for c in clientes if c["id"] != cliente["id"]]
+                escribir_csv(
+                    CLIENTE_FILE,
+                    clientes,
+                    fieldnames=["id", "cliente", "direccion", "direccion_entrega", "fecha_evento", "telefono_cliente"]
+                )
+                # Guardamos quién fue borrado para mostrar feedback después
+                st.session_state.cliente_borrado = cliente['cliente']
+                st.session_state.confirmar_borrado = False
+                st.rerun()
+
+        with col2:
+            if st.button("❌ No, cancelar"):
+                st.info("Operación cancelada.")
+                st.session_state.confirmar_borrado = False
+                st.rerun()
+
+# Mostrar feedback si alguien fue borrado
+if st.session_state.cliente_borrado:
+    st.success(f"✅ Cliente eliminado: {st.session_state.cliente_borrado}")
+    # Limpiamos el mensaje para que no se muestre en el siguiente run
+    st.session_state.cliente_borrado = None
+
+
+
 # =======================
 # Sección Ítems
 # =======================
